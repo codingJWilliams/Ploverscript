@@ -118,12 +118,15 @@ def transcribe_something(already_seen):
         print(small_indent)
         print(small_indent + "THIS POST IS IN /r/" + links["foreign_thread"].subreddit.display_name)
 
+
         with open("notable_rules.json") as f:
             d = json.loads(f.read())
 
         if links["foreign_thread"].subreddit.display_name in d:
-            print(small_indent + "sub rules to note:")
-            print(d[links["foreign_thread"].subreddit.display_name])
+            print(small_indent + "Notable rules:\n" + small_indent)
+            print("\n".join([small_indent + " - " + a + "\n" for a in d[links["foreign_thread"].subreddit.display_name]]).rstrip())
+
+        print(small_indent + "Please report on the foreign thread " +  links['foreign_thread'].shortlink + " if it breaks their rules")
 
         resp = input("[CLAIM?] ").rstrip()
         if resp == "q":
