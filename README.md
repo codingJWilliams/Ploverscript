@@ -5,10 +5,8 @@ Ploverscript is a lightweight Python script that automates the process of transc
 
 To use the script you **must** modmail /r/TranscribersOfReddit mods to seek permission. Additionally, you must ensure you stick to the following guidelines:
 
-* You must not *race* to transcribe; don't go so fast you miss things or don't adhere to the guidelines
-
-* You must follow format guides like a normal user
-
+* You must not *race* to transcribe; don't go so fast you miss things or don't adhere to the guidelines  
+* You must follow format guides like a normal transcriber  
 * If a post breaks the foreign subreddit's rules (which are *sometimes* displayed before the claim message), you should report it on the foreign sub and the /r/ToR post.
 
 ---
