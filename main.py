@@ -39,6 +39,9 @@ def with_status(status, operation):
     print(big_indent + "...done")
     return res
 
+def forget_image():
+    os.system("cp resources/nocontent.png data")
+
 def wait_lock(comment):
     while True:
         for reply in comment.replies:
@@ -78,9 +81,11 @@ def get_transcribot(tor_thread):
 
     for comment in tor_thread.comments:
         if comment.author == "transcribot":
-            print(big_indent + "found transcribot!")
-            transcribot = comment.replies[0].body
-            transcribot = transcribot[:transcribot.rfind("---\n")]
+            if len(comment.replies) >= 1:
+                transcribot = comment.replies[0].body
+                transcribot = transcribot[:transcribot.rfind("---\n")]
+                print(big_indent + "Found transcribot!")
+                break
 
     return transcribot
 
@@ -110,8 +115,15 @@ def transcribe_something(already_seen):
         def fetch():
             links = pull_links(tor_thread)
             os.system("wget -q -O data {} > /dev/null".format(links['content']))
+            if os.WEXITSTATUS(os.system("identify data &> /dev/null")):
+                print(big_indent + "Content is not an image.")
+                return None
             return links
         links = with_status("fetching content", fetch)
+        if not links:
+            forget_image()
+            continue
+
         if transcribot:
             with open("tmp/ocr.txt", "w") as f:
                 f.write(transcribot)
@@ -133,52 +145,60 @@ def transcribe_something(already_seen):
         # Prompt for claim.
         resp = input("[CLAIM?] ").rstrip()
         if resp == "q":
+            forget_image()
             return 0
         if resp == "r":
+            forget_image()
             return 2
         if resp.lower() not in map(lambda x: x.split("/")[-1], glob.glob("./template/*")):
+            forget_image()
             continue
         write_template(resp)
 
         # Try to claim. Wait for confirmation to come through.
-        start_time = None
         def claim(tor_thread):
             tor_thread = reddit.submission(id=tor_thread.id) 
             if not thread_ok(tor_thread):
                 input("[DESIST!] ")
-                return False
+                return None
             start_time = get_time()
             claim_msg = "Claiming post {}.".format(tor_thread.id)
             print((big_indent + '"{}"').format(claim_msg))
-            claim_comment = tor_thread.reply(claim_msg)
-        with_status("claiming", lambda: claim(tor_thread))
+            return start_time, claim_msg, tor_thread.reply(claim_msg)
+        claim_result = with_status("claiming", lambda: claim(tor_thread)) 
+        if not claim_result:
+            forget_image()
+            continue
+        start_time, claim_msg, claim_comment = claim_result
         if not with_status("waiting for lock", lambda: wait_lock(claim_comment)):
             lost_msg = "Race condition lost after {} spent in lock limbo.".format(
                     show_delta(get_time() - start_time))
             print((big_indent + '"{}"').format(lost_msg))
-            claim_comment.edit("~~{}~~\n{}".format(claim_comment, lost_msg))
+            claim_comment.edit("~~{}~~\n{}".format(claim_msg, lost_msg))
             input("[DESIST!] ")
+            forget_image()
             continue
         locked_time = get_time()
 
         # Submit and register our work.
         input("[SUBMIT?] ")
         def submit():
-            comment = open("working.md", "r").read()
-            if comment.startswith("REFER"):
-                comment = "\n".join(comment.split("\n")[1:])
-            open("archive/{}".format(tor_thread.id), "w").write(comment)
-            links['submit'](comment)
-            return comment
-        comment = with_status("submitting transcription", submit)
+            transcription = open("working.md", "r").read()
+            if transcription.startswith("REFER"):
+                transcription = "\n".join(transcription.split("\n")[1:])
+            os.system("mkdir -p archive")
+            open("archive/{}".format(tor_thread.id), "w").write(transcription)
+            return links['submit'](transcription)
+        foreign_comment = with_status("submitting transcription", submit)
         done_msg = "Done with {} after {} ({} spent in lock limbo).".format(
                 tor_thread.id, 
                 show_delta(get_time() - start_time),
                 show_delta(locked_time - start_time))
-        print(small_indent + done_msg)
-        print(small_indent + "foreign thread is: " + links['foreign_thread'].shortlink)
+        print((small_indent + '"{}"').format(done_msg))
+        print("[{} is now transcriber]".format(links['foreign_thread'].shortlink))
         tor_thread.reply(done_msg) 
         claim_comment.delete()
+        forget_image()
         return 2
 
     return 1
@@ -193,4 +213,5 @@ if __name__ == "__main__":
                 print(small_indent + "waiting for fresh content...")
                 sleep(5)
 
+    forget_image()
     with_state("tmp/seen", app)
