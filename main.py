@@ -1,7 +1,8 @@
-#!/home/magneticduck/caption/.venv/bin/python
+#!/home/magneticduck/Ploverscript/.venv/bin/python
 #from noobski_auth import reddit
 import praw
 import passwords
+
 
 
 reddit = praw.Reddit(client_id=passwords.client_id,
