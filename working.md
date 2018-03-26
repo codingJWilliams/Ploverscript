@@ -1,10 +1,29 @@
+REFER TO: https://www.reddit.com/r/TranscribersOfReddit/wiki/format/images
 *Image Transcription:*
 
 ---
 
+[*Description of Image.*]
+
 ___BEGIN OCR___
 
-fsso& 
+2 tags in common! 
+
+Mar 26 1:05 AM 
+
+Hey how was your weekend? 
+
+Mine was so busy. And exhausting. I 
+
+just had a hockey game tonight and 
+
+I've hit my all-time low as I sit here in 
+
+my hockey pants and a diaper 
+
+try not to judge, please! 
+
+Type something... 
 
 
 
