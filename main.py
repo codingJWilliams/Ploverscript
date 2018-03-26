@@ -62,12 +62,13 @@ def is_fresh(thing, already_seen):
 
 def thread_ok(tor_thread):
     if tor_thread.link_flair_text != "Unclaimed":
+        print(big_indent + "Thread is not unclaimed.")
         return False
 
     tor_thread.comments.replace_more()
     for comment in tor_thread.comments.list():
         if comment.author not in ["transcribersofreddit", "transcribot"]:
-            print(big_indent + "Another user is here but the thread is not claimed.")
+            print(big_indent + "Thread is unclaimed, but another user is already here. Avoiding.")
             return False
 
     return True
@@ -141,17 +142,16 @@ def transcribe_something(already_seen):
 
         # Try to claim. Wait for confirmation to come through.
         start_time = None
-        def claim():
-            # tor_thread.refresh() TODO: do this
+        def claim(tor_thread):
+            tor_thread = reddit.submission(id=tor_thread.id) 
             if not thread_ok(tor_thread):
-                print(big_indent + "Claim is no longer available!")
                 input("[DESIST!] ")
                 return False
             start_time = get_time()
             claim_msg = "Claiming post {}.".format(tor_thread.id)
             print((big_indent + '"{}"').format(claim_msg))
             claim_comment = tor_thread.reply(claim_msg)
-        with_status("claiming", claim)
+        with_status("claiming", lambda: claim(tor_thread))
         if not with_status("waiting for lock", lambda: wait_lock(claim_comment)):
             lost_msg = "Race condition lost after {} spent in lock limbo.".format(
                     show_delta(get_time() - start_time))
