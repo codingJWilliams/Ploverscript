@@ -15,7 +15,7 @@ import glob
 import webbrowser
 import ast
 import os
-import time
+import time, json
 import calendar
 import datetime
 
@@ -32,8 +32,8 @@ def pull_links(tor_thread):
     linked = reddit.submission(url=tor_thread.url)
     return dict(
         submit=(lambda x: linked.reply(x)),
-        tor_thread=(tor_thread.shortlink),
-        foreign_thread=linked.shortlink, 
+        tor_thread=(tor_thread),
+        foreign_thread=linked, 
         content=linked.url)
 
 def with_status(status, operation):
@@ -115,7 +115,19 @@ def transcribe_something(already_seen):
             with_status("running tesseract", lambda: os.system("tesseract data tmp/ocr > /dev/null"))
 
         write_template("default")
-        print(small_indent + "TOR thread is: " + links['tor_thread'])
+        print(small_indent + "TOR thread is: " + links['tor_thread'].shortlink)
+        print(small_indent)
+        print(small_indent + "THIS POST IS IN /r/" + links["foreign_thread"].subreddit.display_name)
+
+
+        with open("notable_rules.json") as f:
+            d = json.loads(f.read())
+
+        if links["foreign_thread"].subreddit.display_name in d:
+            print(small_indent + "Notable rules:\n" + small_indent)
+            print("\n".join([small_indent + " - " + a + "\n" for a in d[links["foreign_thread"].subreddit.display_name]]).rstrip())
+
+        print(small_indent + "Please report on the foreign thread " +  links['foreign_thread'].shortlink + " if it breaks their rules")
 
         resp = input("[CLAIM?] ").rstrip()
         if resp == "q":
@@ -148,7 +160,7 @@ def transcribe_something(already_seen):
                 show_delta(get_time() - start_time),
                 show_delta(locked_time - start_time))
         print(small_indent + done_msg)
-        print(small_indent + "foreign thread is: " + links['foreign_thread'])
+        print(small_indent + "foreign thread is: " + links['foreign_thread'].shortlink)
         tor_thread.reply(done_msg) 
         claim_comment.delete()
         return 2
