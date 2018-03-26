@@ -49,13 +49,18 @@ def wait_lock(comment):
         time.sleep(2)
         comment.refresh()
 
-def with_state(name, app):
-    with open(name,'r') as f:
-        state = ast.literal_eval(f.read())
+def with_state(name, default, app):
+    os.system("mkdir -p ./tmp")
+    path = "tmp/" + name
+    if os.path.isfile(path):
+        with open(path, "r") as f:
+            state = ast.literal_eval(f.read())
+    else:
+        state = default
 
     app(state)
 
-    with open(name,'w') as f:
+    with open(path, "w") as f:
         f.write(str(state))
 
 def is_fresh(thing, already_seen):
@@ -214,4 +219,4 @@ if __name__ == "__main__":
                 sleep(5)
 
     forget_image()
-    with_state("tmp/seen", app)
+    with_state("seen", {}, app)
