@@ -15,8 +15,8 @@ import time, json
 import calendar
 import datetime
 
-small_indent = "   | "
-big_indent =   "   |   "
+small_indent = "    | "
+big_indent =   "    |    "
 
 def get_time():
     return calendar.timegm(time.gmtime())
@@ -36,7 +36,7 @@ def pull_links(tor_thread):
 def with_status(status, operation):
     print(small_indent + status + "...")
     res = operation()
-    print(big_indent + "...done")
+    print(big_indent + "...done.")
     return res
 
 def forget_image():
@@ -95,19 +95,19 @@ def write_template(code):
 # Walk through the recent submissions and try to transcribe something. 
 # Returns 0 to quit, 1 to wait for new content, 2 to run again immediately.
 def transcribe_something(already_seen):
-    print(small_indent + "refreshing TOR listing...")
+    print("\nRefreshing TOR listing...")
     for tor_thread in reddit.subreddit('transcribersofreddit').new(limit=100):
         if not is_fresh(tor_thread.id, already_seen):
             continue
 
         # Scan the TOR thread for availability and transcribot.
-        print("[START]")
+        print("\n[0. START]")
         def scan():
             if not thread_ok(tor_thread):
                 return (False, None)
             transcribot = get_transcribot(tor_thread) 
             return (True, transcribot)
-        available, transcribot = with_status("scanning {}".format(tor_thread.shortlink), scan)
+        available, transcribot = with_status("Scanning {}".format(tor_thread.shortlink), scan)
         if not available: 
             continue
 
@@ -119,7 +119,7 @@ def transcribe_something(already_seen):
                 print(big_indent + "Content is not an image.")
                 return None
             return links
-        links = with_status("fetching content", fetch)
+        links = with_status("Fetching content", fetch)
         if not links:
             forget_image()
             continue
@@ -128,22 +128,22 @@ def transcribe_something(already_seen):
             with open("tmp/ocr.txt", "w") as f:
                 f.write(transcribot)
         else:
-            with_status("running tesseract", lambda: os.system("tesseract data tmp/ocr &> /dev/null"))
+            with_status("Running tesseract", lambda: os.system("tesseract data tmp/ocr &> /dev/null"))
         write_template("none")
         foreign_subreddit = links['foreign_thread'].subreddit.display_name
 
         # Get information and rules.
-        print('[{} from /r/{}]'.format(
+        print(small_indent + 'Post is {} from /r/{}.'.format(
             links['foreign_thread'].shortlink,  
             foreign_subreddit))
         notable_rules = json.loads(open("notable_rules.json").read())
         rules = notable_rules.get(foreign_subreddit)
         if rules:
-            print(small_indent + "rules in vigor:")
+            print(small_indent + "Rules in vigor:")
             print("\n".join(map((big_indent + "- {}").format, rules)).rstrip())
 
         # Prompt for claim.
-        resp = input("[CLAIM?] ").rstrip()
+        resp = input("[1. CLAIM?] ").rstrip()
         if resp == "q":
             forget_image()
             return 0
@@ -165,12 +165,12 @@ def transcribe_something(already_seen):
             claim_msg = "Claiming post {}.".format(tor_thread.id)
             print((big_indent + '"{}"').format(claim_msg))
             return start_time, claim_msg, tor_thread.reply(claim_msg)
-        claim_result = with_status("claiming", lambda: claim(tor_thread)) 
+        claim_result = with_status("Claiming", lambda: claim(tor_thread)) 
         if not claim_result:
             forget_image()
             continue
         start_time, claim_msg, claim_comment = claim_result
-        if not with_status("waiting for lock", lambda: wait_lock(claim_comment)):
+        if not with_status("Waiting for lock", lambda: wait_lock(claim_comment)):
             lost_msg = "Race condition lost after {} spent in lock limbo.".format(
                     show_delta(get_time() - start_time))
             print((big_indent + '"{}"').format(lost_msg))
@@ -181,22 +181,22 @@ def transcribe_something(already_seen):
         locked_time = get_time()
 
         # Submit and register our work.
-        input("[SUBMIT?] ")
+        input("[2. SUBMIT?] ")
         def submit():
             transcription = open("working.md", "r").read()
             if transcription.startswith("REFER"):
                 transcription = "\n".join(transcription.split("\n")[1:])
             os.system("mkdir -p archive")
             open("archive/{}".format(tor_thread.id), "w").write(transcription)
-            return links['submit'](transcription)
-        foreign_comment = with_status("submitting transcription", submit)
-        done_msg = "Done with {} after {} ({} spent in lock limbo).".format(
-                tor_thread.id, 
-                show_delta(get_time() - start_time),
-                show_delta(locked_time - start_time))
-        print((small_indent + '"{}"').format(done_msg))
-        print("[{} is now transcribed]".format(links['foreign_thread'].shortlink))
-        tor_thread.reply(done_msg) 
+            links['submit'](transcription)
+            done_msg = "Done with {} after {} ({} spent in lock limbo).".format(
+                    tor_thread.id, 
+                    show_delta(get_time() - start_time),
+                    show_delta(locked_time - start_time))
+            print((small_indent + '"{}"').format(done_msg))
+            tor_thread.reply(done_msg) 
+        with_status("Submitting transcription", submit)
+        print("[3. DONE]")
         claim_comment.delete()
         forget_image()
         return 2
@@ -210,7 +210,7 @@ if __name__ == "__main__":
             if res == 0:
                 return
             if res == 1:
-                print(small_indent + "waiting for fresh content...")
+                print("Waiting for fresh content...")
                 sleep(5)
 
     forget_image()
