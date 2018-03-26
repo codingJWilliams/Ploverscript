@@ -195,7 +195,7 @@ def transcribe_something(already_seen):
                 show_delta(get_time() - start_time),
                 show_delta(locked_time - start_time))
         print((small_indent + '"{}"').format(done_msg))
-        print("[{} is now transcriber]".format(links['foreign_thread'].shortlink))
+        print("[{} is now transcribed]".format(links['foreign_thread'].shortlink))
         tor_thread.reply(done_msg) 
         claim_comment.delete()
         forget_image()

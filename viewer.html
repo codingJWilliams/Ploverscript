@@ -1,9 +1,25 @@
 <html>
 <head>
+<style>
+html,body{
+    margin:0;
+    width:100%;
+    overflow:hidden;
+}
+canvas{
+    max-height:100%;
+    max-width:100%;
+    height:auto;
+    width:auto;
+    position:absolute;
+    top:-100%; bottom:-100%;
+    left:-100%; right:-100%;
+    margin:auto;
+}
+</style>
 <script type="text/JavaScript">
 var url = "data"; //url to load image from
-var refreshInterval = 1000; //in ms
-var drawDate = true; //draw date string
+var refreshInterval = 500; //in ms
 var img;
 
 function init() {
@@ -14,18 +30,6 @@ function init() {
         canvas.setAttribute("width", img.width)
         canvas.setAttribute("height", img.height)
         context.drawImage(this, 0, 0);
-        if(drawDate) {
-            var now = new Date();
-            var text = now.toLocaleDateString() + " " + now.toLocaleTimeString();
-            var maxWidth = 100;
-            var x = img.width-10-maxWidth;
-            var y = img.height-10;
-            context.strokeStyle = 'black';
-            context.lineWidth = 2;
-            context.strokeText(text, x, y, maxWidth);
-            context.fillStyle = 'white';
-            context.fillText(text, x, y, maxWidth);
-        }
     };
     refresh();
 }
