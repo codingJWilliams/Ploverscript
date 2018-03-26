@@ -147,13 +147,11 @@ def transcribe_something(already_seen):
                 print(big_indent + "Claim is no longer available!")
                 input("[DESIST!] ")
                 return False
-            return
             start_time = get_time()
             claim_msg = "Claiming post {}.".format(tor_thread.id)
             print((big_indent + '"{}"').format(claim_msg))
             claim_comment = tor_thread.reply(claim_msg)
         with_status("claiming", claim)
-        continue
         if not with_status("waiting for lock", lambda: wait_lock(claim_comment)):
             lost_msg = "Race condition lost after {} spent in lock limbo.".format(
                     show_delta(get_time() - start_time))

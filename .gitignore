@@ -5,6 +5,8 @@
 passwords.py
 archive/*
 tmp/*
+data
+working.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
