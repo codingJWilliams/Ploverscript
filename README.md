@@ -41,5 +41,7 @@ Remember to regularly review your comment history and messages!
 
 ## Bonus Features
 
-Transcriptions you produce with Ploverscript are saved to `archive/`. The `report.py` CLI lets you query and recall these transcriptions; entering a search string will recall a transcription containing it, and entering "Y" will copy the previous search result into `working.md`. This is useful for {re,cross}posts or memes that you have not templated.
+Transcriptions you produce with Ploverscript are saved to `archive/`, and the `report.py` CLI lets you query and recall them. This is useful for {re,cross}posts or memes that you have not templated.
+
+Entering a search string will recall a transcription containing it, and entering "Y" will copy the previous search result into `working.md`. 
 

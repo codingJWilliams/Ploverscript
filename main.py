@@ -1,5 +1,3 @@
-#!/home/magneticduck/Ploverscript/.venv/bin/python
-#from noobski_auth import reddit
 import praw
 import passwords
 
