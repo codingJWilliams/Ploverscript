@@ -1,5 +1,6 @@
 import praw
 import passwords
+from time import sleep
 
 reddit = praw.Reddit(client_id=passwords.client_id,
                      client_secret=passwords.client_secret,
