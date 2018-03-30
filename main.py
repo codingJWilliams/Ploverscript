@@ -191,6 +191,7 @@ def transcribe_something(already_seen):
             transcription = open("working.md", "r").read()
             if transcription.startswith("REFER"):
                 transcription = "\n".join(transcription.split("\n")[1:])
+            transcription = transcription.replace("We see", "An image of")
             os.system("mkdir -p archive")
             open("archive/{}".format(tor_thread.id), "w").write(transcription)
             links['submit'](transcription)
