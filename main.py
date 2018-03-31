@@ -11,6 +11,7 @@ import glob
 import webbrowser
 import ast
 import os
+from time import sleep
 import time, json
 import calendar
 import datetime
@@ -94,8 +95,13 @@ def get_transcribot(tor_thread):
 
     return transcribot
 
-def write_template(code):
-    os.system("cat template/{} > working.md; echo '___BEGIN OCR___\n' >> working.md; cat tmp/ocr.txt >> working.md; cat footer >> working.md".format(code))
+def write_template(code, sub):
+    if sub not in map(lambda x: x.split("/")[-1], glob.glob("./aprilfoolsfooters/*")):
+        footerfile = "footer"
+    else:
+        footerfile = "aprilfoolsfooters/" + sub
+
+    os.system("cat template/{} > working.md; echo '___BEGIN OCR___\n' >> working.md; cat tmp/ocr.txt >> working.md; cat {} >> working.md".format(code, footerfile))
 
 # Walk through the recent submissions and try to transcribe something. 
 # Returns 0 to quit, 1 to wait for new content, 2 to run again immediately.
@@ -134,9 +140,9 @@ def transcribe_something(already_seen):
                 f.write(transcribot)
         else:
             with_status("Running tesseract", lambda: os.system("tesseract data tmp/ocr &> /dev/null"))
-        write_template("none")
+        
         foreign_subreddit = links['foreign_thread'].subreddit.display_name
-
+        write_template("none", foreign_subreddit)
         # Get information and rules.
         print(small_indent + 'Post is {} from /r/{}.'.format(
             links['foreign_thread'].shortlink,  
@@ -158,7 +164,7 @@ def transcribe_something(already_seen):
         if resp.lower() not in map(lambda x: x.split("/")[-1], glob.glob("./template/*")):
             forget_image()
             continue
-        write_template(resp)
+        write_template(resp, foreign_subreddit)
 
         # Try to claim. Wait for confirmation to come through.
         def claim(tor_thread):
