@@ -1,0 +1,43 @@
+<html>
+<head>
+<style>
+html,body{
+  margin:0;
+  width:100%;
+  overflow:hidden;
+}
+canvas{
+  max-height:100%;
+  max-width:100%;
+  height:auto;
+  width:auto;
+  position:absolute;
+  top:-100%; bottom:-100%;
+  left:-100%; right:-100%;
+  margin:auto;
+}
+</style>
+<script type="text/JavaScript">
+function init() {
+  var canvas = document.getElementById("canvas");
+  var context = canvas.getContext("2d");
+  var img = new Image();
+  img.onload = function() {
+    canvas.setAttribute("width", img.width)
+    canvas.setAttribute("height", img.height)
+    context.drawImage(this, 0, 0);
+  };
+  refresh();
+}
+
+function refresh() {
+  img.src = "data?t=" + new Date().getTime(); // to disable caching
+  setTimeout("refresh()", 500);
+}
+</script>
+<title>Ploverscript</title>
+</head>
+<body onload="init()">
+  <canvas id="canvas"/>
+</body>
+</html>

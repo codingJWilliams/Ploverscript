@@ -1,44 +1,9 @@
-import praw
-import passwords
-
-reddit = praw.Reddit(client_id=passwords.client_id,
-                     client_secret=passwords.client_secret,
-                     password=passwords.password,
-                     user_agent=passwords.user_agent,
-                     username=passwords.username)
-
+from util import *
 import glob
-import webbrowser
-import ast
-import os
-import time, json
-import calendar
-import datetime
+import os, webbrowser
+import ast, json
 
-small_indent = "    | "
-big_indent =   "    |    "
-
-def get_time():
-    return calendar.timegm(time.gmtime())
-
-def show_delta(second):
-    return datetime.timedelta(seconds=round(second))
-
-# Requires at least one GET.
-def pull_links(tor_thread):
-    linked = reddit.submission(url=tor_thread.url)
-    return dict(
-        submit=(lambda x: linked.reply(x)),
-        tor_thread=tor_thread,
-        foreign_thread=linked, 
-        content=linked.url)
-
-def with_status(status, operation):
-    print(small_indent + status + "...")
-    res = operation()
-    print(big_indent + "...done.")
-    return res
-
+# Invalidate `data` by writing over it with a "no content loaded" image.
 def forget_image():
     os.system("cp resources/nocontent.png data")
 
@@ -62,11 +27,6 @@ def with_state(name, default, app):
 
     with open(path, "w") as f:
         f.write(str(state))
-
-def is_fresh(thing, already_seen):
-    was_seen = thing in already_seen 
-    already_seen[thing] = 1
-    return not was_seen
 
 def thread_ok(tor_thread):
     if tor_thread.link_flair_text != "Unclaimed":
@@ -100,9 +60,14 @@ def write_template(code):
 # Walk through the recent submissions and try to transcribe something. 
 # Returns 0 to quit, 1 to wait for new content, 2 to run again immediately.
 def transcribe_something(already_seen):
+    def is_fresh(thing):
+        was_seen = thing in already_seen 
+        already_seen[thing] = 1
+        return not was_seen
+
     print("\nRefreshing TOR listing...")
     for tor_thread in reddit.subreddit('transcribersofreddit').new(limit=100):
-        if not is_fresh(tor_thread.id, already_seen):
+        if not is_fresh(tor_thread.id):
             continue
 
         # Scan the TOR thread for availability and transcribot.
@@ -141,7 +106,7 @@ def transcribe_something(already_seen):
         print(small_indent + 'Post is {} from /r/{}.'.format(
             links['foreign_thread'].shortlink,  
             foreign_subreddit))
-        notable_rules = json.loads(open("notable_rules.json").read())
+        notable_rules = json.loads(open("resources/notable_rules.json").read())
         rules = notable_rules.get(foreign_subreddit)
         if rules:
             print(small_indent + "Rules in vigor:")
@@ -167,9 +132,10 @@ def transcribe_something(already_seen):
                 input("[DESIST!] ")
                 return None
             start_time = get_time()
+            claim_msg = None
             claim_msg = "Claiming post {}.".format(tor_thread.id)
             print((big_indent + '"{}"').format(claim_msg))
-            return start_time, claim_msg, tor_thread.reply(claim_msg)
+            return start_time, claim_msg, tor_thread.reply(tag_msg(claim_msg))
         claim_result = with_status("Claiming", lambda: claim(tor_thread)) 
         if not claim_result:
             forget_image()
@@ -199,7 +165,7 @@ def transcribe_something(already_seen):
                     show_delta(get_time() - start_time),
                     show_delta(locked_time - start_time))
             print((small_indent + '"{}"').format(done_msg))
-            tor_thread.reply(done_msg) 
+            tor_thread.reply(tag_msg(done_msg)) 
         with_status("Submitting transcription", submit)
         print("[3. DONE]")
         claim_comment.delete()
@@ -209,6 +175,8 @@ def transcribe_something(already_seen):
     return 1
 
 if __name__ == "__main__":
+    print("Starting Ploverscript v{}.".format(version))
+
     def app(already_seen):
         while True:
             res = transcribe_something(already_seen)
