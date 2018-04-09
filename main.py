@@ -15,7 +15,7 @@ def wait_lock(comment):
     while True:
         for reply in comment.replies:
             return "The post is yours!" in reply.body
-        time.sleep(2)
+        time.sleep(1)
         comment.refresh()
 
 def with_state(name, default, app):
@@ -58,13 +58,9 @@ def get_transcribot(tor_thread):
 
     return transcribot
 
-def write_template(code, sub):
-    if sub not in map(lambda x: x.split("/")[-1], glob.glob("./aprilfoolsfooters/*")):
-        footerfile = "footer"
-    else:
-        footerfile = "aprilfoolsfooters/" + sub
-
-    os.system("cat template/{} > working.md; echo '___BEGIN OCR___\n' >> working.md; cat tmp/ocr.txt >> working.md; cat {} >> working.md".format(code, footerfile))
+def write_template(code):
+    os.system("cat template/{} > working.md; echo '___BEGIN OCR___\n' >> working.md;".format(code))
+    os.system("cat tmp/ocr.txt >> working.md; cat footer >> working.md")
 
 # Walk through the recent submissions and try to transcribe something. 
 # Returns 0 to quit, 1 to wait for new content, 2 to run again immediately.
@@ -110,7 +106,7 @@ def transcribe_something(already_seen):
             with_status("Running tesseract", lambda: os.system("tesseract data tmp/ocr &> /dev/null"))
         
         foreign_subreddit = links['foreign_thread'].subreddit.display_name
-        write_template("none", foreign_subreddit)
+        write_template("none")
         # Get information and rules.
         print(small_indent + 'Post is {} from /r/{}.'.format(
             links['foreign_thread'].shortlink,  
@@ -132,7 +128,7 @@ def transcribe_something(already_seen):
         if resp.lower() not in map(lambda x: x.split("/")[-1], glob.glob("./template/*")):
             forget_image()
             continue
-        write_template(resp, foreign_subreddit)
+        write_template(resp)
 
         # Try to claim. Wait for confirmation to come through.
         def claim(tor_thread):
@@ -144,7 +140,7 @@ def transcribe_something(already_seen):
             claim_msg = None
             claim_msg = "Claiming post {}.".format(tor_thread.id)
             print((big_indent + '"{}"').format(claim_msg))
-            return start_time, claim_msg, tor_thread.reply(tag_msg(claim_msg))
+            return start_time, claim_msg, tor_thread.reply(with_version(claim_msg))
         claim_result = with_status("Claiming", lambda: claim(tor_thread)) 
         if not claim_result:
             forget_image()
@@ -166,7 +162,7 @@ def transcribe_something(already_seen):
             transcription = open("working.md", "r").read()
             if transcription.startswith("REFER"):
                 transcription = "\n".join(transcription.split("\n")[1:])
-            os.system("mkdir -p archive")
+            os.system("mkdir -p my_transcriptions")
             open("archive/{}".format(tor_thread.id), "w").write(transcription)
             links['submit'](transcription)
             done_msg = "Done with {} after {} ({} spent in lock limbo).".format(
@@ -174,7 +170,7 @@ def transcribe_something(already_seen):
                     show_delta(get_time() - start_time),
                     show_delta(locked_time - start_time))
             print((small_indent + '"{}"').format(done_msg))
-            tor_thread.reply(tag_msg(done_msg)) 
+            tor_thread.reply(with_version(done_msg)) 
         with_status("Submitting transcription", submit)
         print("[3. DONE]")
         claim_comment.delete()

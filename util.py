@@ -5,7 +5,7 @@ import calendar, datetime, time
 # Version!
 
 version = "0.1"
-tag_msg = lambda msg: msg + "\n\nI'm using Ploverscript v{}. Learn more [here](https://github.com/codingJWilliams/Ploverscript).".format(version)
+with_version = lambda msg: msg + "\n\nI'm using Ploverscript v{}. Learn more [here](https://github.com/codingJWilliams/Ploverscript).".format(version)
 
 # Formatting stuff.
 
