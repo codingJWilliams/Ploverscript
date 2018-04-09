@@ -5,6 +5,7 @@
 passwords.py
 archive/*
 tmp/*
+tor_archive/index.html
 data
 working.md
 
