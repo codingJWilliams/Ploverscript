@@ -88,29 +88,30 @@ def transcribe_something(already_seen):
 
         # Fetch the post.
         def fetch():
-            links = pull_links(tor_thread)
-            os.system("wget -q -O data {} > /dev/null".format(links['content']))
-            if os.WEXITSTATUS(os.system("identify data &> /dev/null")):
+            post = fetch_post(tor_thread)
+            os.system("wget -q -O data.tmp {} > /dev/null".format(post['content']))
+            if os.WEXITSTATUS(os.system("identify data.tmp &> /dev/null")):
                 print(big_indent + "Content is not an image.")
                 return None
-            return links
-        links = with_status("Fetching content", fetch)
-        if not links:
+            os.system("mv data.tmp data")
+            return post 
+        post = with_status("Fetching post", fetch)
+        if not post:
             forget_image()
             continue
-
         if transcribot:
             with open("tmp/ocr.txt", "w") as f:
                 f.write(transcribot)
         else:
             with_status("Running tesseract", lambda: os.system("tesseract data tmp/ocr &> /dev/null"))
-        
-        foreign_subreddit = links['foreign_thread'].subreddit.display_name
+
+        # Display subreddit rules and write template-less file with OCR.
+        foreign_subreddit = post['foreign_thread'].subreddit.display_name
         write_template("none")
-        # Get information and rules.
-        print(small_indent + 'Post is {} from /r/{}.'.format(
-            links['foreign_thread'].shortlink,  
-            foreign_subreddit))
+        print(small_indent + 'Post is {} from /r/{}. (T - {})'.format(
+            post['foreign_thread'].shortlink,  
+            foreign_subreddit,
+            show_delta(get_time() - post['foreign_thread'].created_utc)))
         notable_rules = json.loads(open("resources/notable_rules.json").read())
         rules = notable_rules.get(foreign_subreddit)
         if rules:
@@ -134,7 +135,6 @@ def transcribe_something(already_seen):
         def claim(tor_thread):
             tor_thread = reddit.submission(id=tor_thread.id) 
             if not thread_ok(tor_thread):
-                input("[DESIST!] ")
                 return None
             start_time = get_time()
             claim_msg = None
@@ -143,6 +143,7 @@ def transcribe_something(already_seen):
             return start_time, claim_msg, tor_thread.reply(with_version(claim_msg))
         claim_result = with_status("Claiming", lambda: claim(tor_thread)) 
         if not claim_result:
+            input("[DESIST!] ")
             forget_image()
             continue
         start_time, claim_msg, claim_comment = claim_result
@@ -150,7 +151,7 @@ def transcribe_something(already_seen):
             lost_msg = "Race condition lost after {} spent in lock limbo.".format(
                     show_delta(get_time() - start_time))
             print((big_indent + '"{}"').format(lost_msg))
-            claim_comment.edit("~~{}~~\n{}".format(claim_msg, lost_msg))
+            claim_comment.edit(with_version("~~{}~~\n{}".format(claim_msg, lost_msg)))
             input("[DESIST!] ")
             forget_image()
             continue
@@ -162,9 +163,9 @@ def transcribe_something(already_seen):
             transcription = open("working.md", "r").read()
             if transcription.startswith("REFER"):
                 transcription = "\n".join(transcription.split("\n")[1:])
-            os.system("mkdir -p my_transcriptions")
+            os.system("mkdir -p archive")
             open("archive/{}".format(tor_thread.id), "w").write(transcription)
-            links['submit'](transcription)
+            post['foreign_thread'].reply(transcription)
             done_msg = "Done with {} after {} ({} spent in lock limbo).".format(
                     tor_thread.id, 
                     show_delta(get_time() - start_time),

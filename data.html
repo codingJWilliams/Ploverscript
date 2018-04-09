@@ -18,10 +18,12 @@ canvas{
 }
 </style>
 <script type="text/JavaScript">
+var img;
+
 function init() {
   var canvas = document.getElementById("canvas");
   var context = canvas.getContext("2d");
-  var img = new Image();
+  img = new Image();
   img.onload = function() {
     canvas.setAttribute("width", img.width)
     canvas.setAttribute("height", img.height)
